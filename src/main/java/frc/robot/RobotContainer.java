@@ -10,9 +10,12 @@ import frc.robot.commands.ExampleCommand;
 import frc.robot.commands.SpinIntakeCmd;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
 import frc.robot.subsystems.storage.BeamBreakSubsystem;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -29,10 +32,13 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
+  private final PIDController pidController = new PIDController(Constants.elevatorConstants.kP,
+      Constants.elevatorConstants.kI, Constants.elevatorConstants.kD);
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
   private final BeamBreakSubsystem m_beamBreakSubsystem = new BeamBreakSubsystem();
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
+  private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController m_driverController = new CommandXboxController(
@@ -49,15 +55,24 @@ public class RobotContainer {
         new StartEndCommand(
             () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
             () -> m_cannonMotorSubsystem.setCannonPower(0),
-            m_cannonMotorSubsystem)
-    );
+            m_cannonMotorSubsystem));
     m_driverController.rightTrigger().whileTrue(
         new StartEndCommand(
             () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.CANNON_FIRING_POWER),
             () -> m_cannonMotorSubsystem.setCannonPower(0),
-            m_cannonMotorSubsystem)
-    );  
+            m_cannonMotorSubsystem));
 
+    m_driverController.a().onTrue(
+        new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.RESET_ELEVATOR_EXTENSION_DISTANCE),
+            m_elevatorSubsystem));
+
+    m_driverController.x().onTrue(
+        new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.AMP_ELEVATOR_EXTENSION_DISTANCE),
+            m_elevatorSubsystem));
+
+    m_driverController.b().onTrue(
+        new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.CLIMB_ELEVATOR_EXTENSION_DISTANCE),
+            m_elevatorSubsystem));
     configureBindings();
   }
 

@@ -42,5 +42,9 @@ public final class Constants {
     public static final double kP = 0.05;
     public static final double kI = 0;
     public static final double kD = 0;
+    public static final double AMP_ELEVATOR_EXTENSION_DISTANCE = 0;
+    public static final double CLIMB_ELEVATOR_EXTENSION_DISTANCE = 0;
+    public static final double RESET_ELEVATOR_EXTENSION_DISTANCE = 0;
+    public static final int ELEVATOR_MOTOR_CAN_ID = 0;
   }
 }
