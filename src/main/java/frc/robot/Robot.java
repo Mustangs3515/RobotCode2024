@@ -4,9 +4,15 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.encoderValues;
+import frc.robot.subsystems.DriveSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -16,19 +22,46 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
  */
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
-
+  public static DriveSubsystem m_drivetrain;
   private RobotContainer m_robotContainer;
+  private Encoder leftEncoder = new Encoder(encoderValues.kLeftEncoderChannelA, encoderValues.kLeftEncoderChannelB);
+  private Encoder rightEncoder = new Encoder(encoderValues.kRightEncoderChannelA, encoderValues.kRightEncoderChannelB);
 
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
+
+  
   @Override
   public void robotInit() {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
+    m_drivetrain = new DriveSubsystem();
     m_robotContainer = new RobotContainer();
+    
   }
+
+  public double getEncoderFeetAverage()
+  {
+    return ((getLeftEncoderFeet() + getRightEncoderFeet())/ 2);
+  }
+            
+  public double getLeftEncoderFeet() {
+    double leftEncoderFeet = leftEncoder.get() * encoderValues.kEncoderTick2Feet;
+    return leftEncoderFeet;
+  }
+
+  public double getRightEncoderFeet() {
+    double rightEncoderFeet = -rightEncoder.get() * encoderValues.kEncoderTick2Feet;
+    return rightEncoderFeet;
+  }
+
+  public void resetEncoders()
+  {
+    leftEncoder.reset();
+    rightEncoder.reset();
+  } 
 
   /**
    * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
@@ -44,6 +77,9 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    SmartDashboard.putNumber("Left Encoder Feet", getLeftEncoderFeet());
+    SmartDashboard.putNumber("Right Encoder Feet", getRightEncoderFeet());
+    SmartDashboard.putNumber("AVERAGE Encoder Feet", getEncoderFeetAverage());
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -57,11 +93,14 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    resetEncoders();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+
   }
 
   /** This function is called periodically during autonomous. */
@@ -77,6 +116,7 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    // CommandScheduler.getInstance().setDefaultCommand(m_drivetrain, new DriveTeleOp());
   }
 
   /** This function is called periodically during operator control. */
