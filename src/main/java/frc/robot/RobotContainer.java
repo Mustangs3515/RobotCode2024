@@ -25,6 +25,7 @@ import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
@@ -77,10 +78,11 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
     // m_driverController.leftTrigger().whileTrue(
     //     new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem));
-    // m_driverController.leftBumper().whileTrue(
+    // m_driverController.leftBumper().whileTrue( //bumper RIGHt for speaker & left bumper amp
     //     new StartEndCommand(
     //         () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
     //         () -> m_cannonMotorSubsystem.setCannonPower(0),
