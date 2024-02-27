@@ -34,7 +34,7 @@ public final class Constants {
 
   public static class cannonConstants {
 
-    // public static final int RIGHT_MOTOR_CAN_ID = 8;
+    public static final int RIGHT_MOTOR_CAN_ID = 8;
     public static final int LEFT_MOTOR_CAN_ID = 16;
     public static final double AMP_FIRING_POWER = 0.5;
     public static final double CANNON_FIRING_POWER = 1;

@@ -31,6 +31,9 @@ public class DriveSubsystem extends SubsystemBase {
   private final WPI_VictorSPX m_leftBackMotor = new WPI_VictorSPX(DriveConstants.kLeftBackMotorPort);
   private final WPI_VictorSPX m_rightBackMotor = new WPI_VictorSPX(DriveConstants.kRightBackMotorPort);
 
+  private static Encoder leftEncoder = new Encoder(encoderValues.kLeftEncoderChannelA, encoderValues.kLeftEncoderChannelB);
+  private static Encoder rightEncoder = new Encoder(encoderValues.kRightEncoderChannelA, encoderValues.kRightEncoderChannelB);
+
   private DifferentialDriveOdometry odometry;
   private final AHRS navX;
 
@@ -40,7 +43,7 @@ public class DriveSubsystem extends SubsystemBase {
   double victorOutput = 0;
 
 
-    // m_leftFrontMotor.follow(m_leftBackMotor);
+  // m_leftFrontMotor.follow(m_leftBackMotor);
   private final DifferentialDrive diffDrive = new DifferentialDrive(m_leftFrontMotor, m_rightFrontMotor);
 
   // possibly instantiate encoders in an init method (?) or constructor
@@ -52,7 +55,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_leftFrontMotor.setInverted(true);
     m_leftBackMotor.setInverted(true);
     navX = new AHRS();
-    odometry = new DifferentialDriveOdometry(navX.getRotation2d(), robot.getLeftEncoderFeet(), robot.getRightEncoderFeet());
+    odometry = new DifferentialDriveOdometry(navX.getRotation2d(), getLeftEncoderFeet(), getRightEncoderFeet());
   }
   // DifferentialDriveOdometry needs the values in Meters, why do we have it in feet?
 
@@ -80,6 +83,10 @@ public class DriveSubsystem extends SubsystemBase {
 
     m_leftBackMotor.follow(m_leftFrontMotor);
     m_rightBackMotor.follow(m_rightFrontMotor);
+
+    SmartDashboard.putNumber("Left Encoder Feet", getLeftEncoderFeet());
+    SmartDashboard.putNumber("Right Encoder Feet", getRightEncoderFeet());
+    SmartDashboard.putNumber("AVERAGE Encoder Feet", getEncoderFeetAverage());
   }
 
   public Pose2d getPose(){
@@ -91,13 +98,34 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public DifferentialDriveWheelPositions getWheelPositions() {
-    return new DifferentialDriveWheelPositions(robot.getLeftEncoderFeet(), robot.getRightEncoderFeet());
+    return new DifferentialDriveWheelPositions(getLeftEncoderFeet(), getRightEncoderFeet());
   }
 
   public void resetOdometry(Pose2d pose){
-    robot.resetEncoders();
+    resetEncoders();
     odometry.resetPosition(navX.getRotation2d(), getWheelPositions(),pose);
   };
+
+  public double getEncoderFeetAverage()
+  {
+    return ((getLeftEncoderFeet() + getRightEncoderFeet())/ 2);
+  }
+            
+  public double getLeftEncoderFeet() {
+    double leftEncoderFeet = leftEncoder.get() * encoderValues.kEncoderTick2Feet;
+    return leftEncoderFeet;
+  }
+
+  public double getRightEncoderFeet() {
+    double rightEncoderFeet = -rightEncoder.get() * encoderValues.kEncoderTick2Feet;
+    return rightEncoderFeet;
+  }
+
+  public void resetEncoders()
+  {
+    leftEncoder.reset();
+    rightEncoder.reset();
+  }
   
   // Tested: Negative, negative
   public void driveByVolts(double leftVolts, double rightVolts) {

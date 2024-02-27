@@ -15,13 +15,13 @@ public class SpinIntakeCmd extends Command {
 
     @Override
     public void execute() {
-        // if (!m_BeamBreakSubsystem.isBeamBroken()){
-        //     m_IntakeMotorSubsystem.spinMotor();
-        // }
+        if (!m_BeamBreakSubsystem.isBeamBroken()){
+            m_IntakeMotorSubsystem.spinMotor();
+        }
     }
 
     @Override
     public void end(boolean interrupted){
-        // m_IntakeMotorSubsystem.stopMotor();
+         m_IntakeMotorSubsystem.stopMotor();
     }
 }

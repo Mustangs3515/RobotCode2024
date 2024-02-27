@@ -24,8 +24,6 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   public static DriveSubsystem m_drivetrain;
   private RobotContainer m_robotContainer;
-  private Encoder leftEncoder = new Encoder(encoderValues.kLeftEncoderChannelA, encoderValues.kLeftEncoderChannelB);
-  private Encoder rightEncoder = new Encoder(encoderValues.kRightEncoderChannelA, encoderValues.kRightEncoderChannelB);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -40,27 +38,6 @@ public class Robot extends TimedRobot {
     m_drivetrain = new DriveSubsystem();
     m_robotContainer = new RobotContainer();
     
-  }
-
-  public double getEncoderFeetAverage()
-  {
-    return ((getLeftEncoderFeet() + getRightEncoderFeet())/ 2);
-  }
-            
-  public double getLeftEncoderFeet() {
-    double leftEncoderFeet = leftEncoder.get() * encoderValues.kEncoderTick2Feet;
-    return leftEncoderFeet;
-  }
-
-  public double getRightEncoderFeet() {
-    double rightEncoderFeet = -rightEncoder.get() * encoderValues.kEncoderTick2Feet;
-    return rightEncoderFeet;
-  }
-
-  public void resetEncoders()
-  {
-    leftEncoder.reset();
-    rightEncoder.reset();
   } 
 
   /**
@@ -77,9 +54,6 @@ public class Robot extends TimedRobot {
     // and running subsystem periodic() methods.  This must be called from the robot's periodic
     // block in order for anything in the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    SmartDashboard.putNumber("Left Encoder Feet", getLeftEncoderFeet());
-    SmartDashboard.putNumber("Right Encoder Feet", getRightEncoderFeet());
-    SmartDashboard.putNumber("AVERAGE Encoder Feet", getEncoderFeetAverage());
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -93,14 +67,12 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-    resetEncoders();
+    m_drivetrain.resetEncoders();
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-
-
   }
 
   /** This function is called periodically during autonomous. */
