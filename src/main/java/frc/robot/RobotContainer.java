@@ -11,6 +11,7 @@ import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.helpers.ControlReversalStore;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
 import frc.robot.subsystems.storage.BeamBreakSubsystem;
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class RobotContainer {
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
   private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
+  private final ControlReversalStore m_controlReversal = new ControlReversalStore();
 
   // Trajectory Generation for auto
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
@@ -118,10 +120,15 @@ public class RobotContainer {
         () -> m_cannonMotorSubsystem.setCannonPower(0)
       )
     );
-    m_driverController.b().onTrue(
+    m_driverController.x().onTrue(
         new RunCommand(
             () -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.CLIMB_ELEVATOR_EXTENSION_DISTANCE),
             m_elevatorSubsystem));
+
+
+    m_driverController.b().onTrue(
+      new RunCommand(() -> m_controlReversal.toggleForwardSide())
+    );
 
     configureBindings();
 
