@@ -84,7 +84,7 @@ public class RobotContainer {
             m_cannonMotorSubsystem));
     m_driverController.rightTrigger().whileTrue(
         new StartEndCommand(
-            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.CANNON_FIRING_POWER),
+            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
             () -> m_cannonMotorSubsystem.setCannonPower(0),
             m_cannonMotorSubsystem));
 
