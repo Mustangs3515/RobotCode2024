@@ -56,8 +56,9 @@ public class RobotContainer {
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
   private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
-  private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
   private final ControlReversalStore m_controlReversal = new ControlReversalStore();
+  private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(m_controlReversal);
+
 
   // Trajectory Generation for auto
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
