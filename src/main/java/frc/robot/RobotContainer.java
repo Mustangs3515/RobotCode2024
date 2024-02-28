@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.Constants.*;
 import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.SpinIntakeCmd;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
@@ -29,7 +30,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -51,7 +55,7 @@ public class RobotContainer {
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
   private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
-    private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
+  private final DriveSubsystem m_driveSubsystem = new DriveSubsystem();
 
   // Trajectory Generation for auto
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
@@ -60,7 +64,7 @@ public class RobotContainer {
   private Path trajectoryPath;
   private RamseteCommand ramseteCommand;
   public DecimalFormat decimalScale = new DecimalFormat("#,###.##");
-  
+
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController m_driverController = new CommandXboxController(
       OperatorConstants.kDriverControllerPort);
@@ -71,30 +75,53 @@ public class RobotContainer {
   public RobotContainer() {
     TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
-    // m_driverController.leftTrigger().whileTrue(
-    //     new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem));
-    // m_driverController.leftBumper().whileTrue( //bumper RIGHt for speaker & left bumper amp
-    //     new StartEndCommand(
-    //         () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
-    //         () -> m_cannonMotorSubsystem.setCannonPower(0),
-    //         m_cannonMotorSubsystem));
-    // m_driverController.rightTrigger().whileTrue(
-    //     new StartEndCommand(
-    //         () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.CANNON_FIRING_POWER),
-    //         () -> m_cannonMotorSubsystem.setCannonPower(0),
-    //         m_cannonMotorSubsystem));
+    m_driverController.leftTrigger().whileTrue(
+        new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem));
+    m_driverController.leftBumper().whileTrue( // bumper RIGHt for speaker & left bumper amp
+        new StartEndCommand(
+            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
+            () -> m_cannonMotorSubsystem.setCannonPower(0),
+            m_cannonMotorSubsystem));
+    m_driverController.rightTrigger().whileTrue(
+        new StartEndCommand(
+            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.CANNON_FIRING_POWER),
+            () -> m_cannonMotorSubsystem.setCannonPower(0),
+            m_cannonMotorSubsystem));
 
     // m_driverController.a().onTrue(
-    //     new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.RESET_ELEVATOR_EXTENSION_DISTANCE),
-    //         m_elevatorSubsystem));
+    //     new RunCommand(
+    //         () -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.RESET_ELEVATOR_EXTENSION_DISTANCE),
+    //         m_elevatorSubsystem).andThen(
+    //             new StartEndCommand(
+    //                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
+    //                 () -> m_cannonMotorSubsystem.setCannonPower(0))));
 
-    // m_driverController.x().onTrue(
-    //     new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.AMP_ELEVATOR_EXTENSION_DISTANCE),
-    //         m_elevatorSubsystem));
 
-    // m_driverController.b().onTrue(
-    //     new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.CLIMB_ELEVATOR_EXTENSION_DISTANCE),
-    //         m_elevatorSubsystem));
+    // Set elevator to amp height and fire at amp power
+    m_driverController.leftBumper().onTrue(
+        new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.AMP_ELEVATOR_EXTENSION_DISTANCE), m_elevatorSubsystem)
+        .andThen(
+          new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER), m_cannonMotorSubsystem)
+        )
+        .andThen(
+          new WaitCommand(2)
+        )
+        .andThen(
+          () -> m_cannonMotorSubsystem.setCannonPower(0)
+        )
+    );  
+    
+    // Shoot into the speaker
+    m_driverController.leftTrigger().onTrue(
+      new StartEndCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
+        () -> m_cannonMotorSubsystem.setCannonPower(0)
+      )
+    );
+    m_driverController.b().onTrue(
+        new RunCommand(
+            () -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.CLIMB_ELEVATOR_EXTENSION_DISTANCE),
+            m_elevatorSubsystem));
 
     configureBindings();
 
@@ -139,41 +166,41 @@ public class RobotContainer {
     return m_chooser.getSelected();
   }
 
-  public Command PathCommand(String trajectoryName)
-  {
-    trajectoryJSON = "PathWeaver/output/leftAmp.wpilib.json"; //"paths/"+ trajectoryName + ".wpilib.json"
+  public Command PathCommand(String trajectoryName) {
+    trajectoryJSON = "PathWeaver/output/leftAmp.wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
     try {
-        trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
-        test1Trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
-   } catch (IOException ex) {
+      trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+      test1Trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+    } catch (IOException ex) {
       DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
-   }
+    }
 
-   ramseteCommand = new RamseteCommand(
-            test1Trajectory,
-            Robot.m_drivetrain::getPose,
-            new RamseteController(Constants.PathWeaverConstants.kRamseteB, Constants.PathWeaverConstants.kRamseteZeta),
-            new SimpleMotorFeedforward(Constants.PathWeaverConstants.ksVolts,
-                                    Constants.PathWeaverConstants.kvVoltSecondsPerMeter,
-                                    Constants.PathWeaverConstants.kaVoltSecondsSquaredPerMeter),
-            Constants.PathWeaverConstants.kDriveKinematics,
-            Robot.m_drivetrain::getWheelSpeeds,
-            new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
-            new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
-            Robot.m_drivetrain::driveByVolts,
-            Robot.m_drivetrain
-        );
+    ramseteCommand = new RamseteCommand(
+        test1Trajectory,
+        Robot.m_drivetrain::getPose,
+        new RamseteController(Constants.PathWeaverConstants.kRamseteB, Constants.PathWeaverConstants.kRamseteZeta),
+        new SimpleMotorFeedforward(Constants.PathWeaverConstants.ksVolts,
+            Constants.PathWeaverConstants.kvVoltSecondsPerMeter,
+            Constants.PathWeaverConstants.kaVoltSecondsSquaredPerMeter),
+        Constants.PathWeaverConstants.kDriveKinematics,
+        Robot.m_drivetrain::getWheelSpeeds,
+        new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
+        new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
+        Robot.m_drivetrain::driveByVolts,
+        Robot.m_drivetrain);
 
-        
-        System.out.println("Initial Pose" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", " + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
-        SmartDashboard.putString("Initial Pose", "(" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", " + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
-        SmartDashboard.putString("Pose", test1Trajectory.getInitialPose().toString());
-        System.out.println(test1Trajectory.getInitialPose().toString());
+    System.out.println("Initial Pose" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", "
+        + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
+    SmartDashboard.putString("Initial Pose", "(" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", "
+        + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
+    SmartDashboard.putString("Pose", test1Trajectory.getInitialPose().toString());
+    System.out.println(test1Trajectory.getInitialPose().toString());
 
-        // Reset robot odometry to initial position of path
-        Command resetCommand = new InstantCommand(() -> Robot.m_drivetrain.resetOdometry(test1Trajectory.getInitialPose()));
-        // Create CommandGroup of the resetCommand and our ramseteCommand
-        Command returnGroup = new SequentialCommandGroup(resetCommand, ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
-        return returnGroup;
+    // Reset robot odometry to initial position of path
+    Command resetCommand = new InstantCommand(() -> Robot.m_drivetrain.resetOdometry(test1Trajectory.getInitialPose()));
+    // Create CommandGroup of the resetCommand and our ramseteCommand
+    Command returnGroup = new SequentialCommandGroup(resetCommand,
+        ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
+    return returnGroup;
   }
 }

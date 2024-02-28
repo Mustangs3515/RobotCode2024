@@ -39,7 +39,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   int maxEncoderTicks = 8192;
   double circumference = Math.PI * 6 * 0.0254; //pi * distance * inches to meters // about .4785
-
+                                               //just saying you guys know wpilib has a thing to auto convert in to m right -jon
   double victorOutput = 0;
 
 
