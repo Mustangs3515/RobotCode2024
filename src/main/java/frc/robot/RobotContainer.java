@@ -169,13 +169,13 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
+    m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp", "leftAmpSpeakerBlueP1"));
     SmartDashboard.putData(m_chooser);
     return m_chooser.getSelected();
   }
 
-  public Command PathCommand(String trajectoryName) {
-    trajectoryJSON = "PathWeaver/output/leftAmp.wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
+  public Command PathCommand(String trajectoryName, String givenName) {
+    trajectoryJSON = "PathWeaver/output/" + givenName + ".wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
     try {
       trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
       test1Trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
