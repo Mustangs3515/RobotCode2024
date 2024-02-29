@@ -28,7 +28,8 @@ public final class Constants {
   }
 
   public static class intakeConstants {
-    public static final int INTAKE_MOTOR_CAN_ID = 1;
+    public static final int INTAKE_MOTOR_LEFT_CAN_ID = 11;
+    public static final int INTAKE_MOTOR_RIGHT_CAN_ID = 10;
     public static final double INTAKE_MOTOR_SPIN_SPEED = 0.5;
   }
 

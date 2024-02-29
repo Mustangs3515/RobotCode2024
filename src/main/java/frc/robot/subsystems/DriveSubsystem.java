@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.encoderValues;
-import frc.robot.subsystems.helpers.ControlReversalStore;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -38,8 +37,6 @@ public class DriveSubsystem extends SubsystemBase {
   private DifferentialDriveOdometry odometry;
   private final AHRS navX;
 
-  private final ControlReversalStore m_controlReversal;
-
   int maxEncoderTicks = 8192;
   double circumference = Math.PI * 6 * 0.0254; //pi * distance * inches to meters // about .4785
                                                //just saying you guys know wpilib has a thing to auto convert in to m right -jon
@@ -54,27 +51,17 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Creates a new ExampleSubsystem. */
   // CONSTRUCTOR
-  public DriveSubsystem(ControlReversalStore control) {
+  public DriveSubsystem() {
     m_leftFrontMotor.setInverted(true);
     m_leftBackMotor.setInverted(true);
     navX = new AHRS();
     odometry = new DifferentialDriveOdometry(navX.getRotation2d(), getLeftEncoderFeet(), getRightEncoderFeet());
-
-    this.m_controlReversal = control;
-
   }
   // DifferentialDriveOdometry needs the values in Meters, why do we have it in feet?
 
 
   public void setMotors(double moveSpeed, double turnSpeed)
   {
-
-    if (this.m_controlReversal.getForwardSide() == "shooter"){
-      diffDrive.arcadeDrive(-moveSpeed, turnSpeed * DriveConstants.returnLimit);
-      return;
-    }
-
-    
     diffDrive.arcadeDrive(moveSpeed, turnSpeed * DriveConstants.returnLimit);
   }
 
