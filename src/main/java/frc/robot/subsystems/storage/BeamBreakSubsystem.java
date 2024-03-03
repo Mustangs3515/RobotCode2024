@@ -1,6 +1,7 @@
 package frc.robot.subsystems.storage;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -15,5 +16,10 @@ public class BeamBreakSubsystem extends SubsystemBase {
     @Override
     public void periodic(){
         this.isBroken = !m_beamBreak.get();
+        if (isBroken){
+            SmartDashboard.putString("BeamBreakSubsystem", "Note ready to fire");
+            return;
+        }
+        SmartDashboard.putString("BeamBreakSubsystem", "No note detected or not ready to fire");
     }
 }
