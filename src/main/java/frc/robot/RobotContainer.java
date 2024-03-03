@@ -5,6 +5,9 @@
 package frc.robot;
 
 import frc.robot.Constants.*;
+import frc.robot.auto.BlueMidAutoPath;
+import frc.robot.auto.BlueTopAutoPath;
+import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.commands.SpinIntakeCmd;
 import frc.robot.subsystems.DriveSubsystem;
@@ -12,8 +15,11 @@ import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.helpers.ControlReversalStore;
+import frc.robot.subsystems.helpers.GenerateRamseteFactory;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
 import frc.robot.subsystems.storage.BeamBreakSubsystem;
+import frc.robot.subsystems.storage.IndexerSubsystem;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -58,6 +64,7 @@ public class RobotContainer {
   private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
   private final ControlReversalStore m_controlReversal = new ControlReversalStore();
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(m_controlReversal);
+  private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem(m_beamBreakSubsystem);
 
 
   // Trajectory Generation for auto
@@ -86,10 +93,19 @@ public class RobotContainer {
             () -> m_cannonMotorSubsystem.setCannonPower(0),
             m_cannonMotorSubsystem));
     m_driverController.rightTrigger().whileTrue(
-        new StartEndCommand(
+        new RunCommand(
             () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-            () -> m_cannonMotorSubsystem.setCannonPower(0),
-            m_cannonMotorSubsystem));
+            m_cannonMotorSubsystem)
+          .andThen(new WaitCommand(1)).andThen(
+            new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)
+          ));
+
+    m_driverController.leftTrigger().onTrue(
+      new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
+      .andThen(new WaitCommand(1))
+      .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
+      .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
+    );
 
     // m_driverController.a().onTrue(
     //     new RunCommand(
@@ -101,19 +117,7 @@ public class RobotContainer {
 
 
     // Set elevator to amp height and fire at amp power
-    m_driverController.leftBumper().onTrue(
-        new RunCommand(() -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.AMP_ELEVATOR_EXTENSION_DISTANCE), m_elevatorSubsystem)
-        .andThen(
-          new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER), m_cannonMotorSubsystem)
-        )
-        .andThen(
-          new WaitCommand(2)
-        )
-        .andThen(
-          () -> m_cannonMotorSubsystem.setCannonPower(0)
-        )
-    );  
-    
+
     // Shoot into the speaker
     m_driverController.leftTrigger().onTrue(
       new StartEndCommand(
@@ -121,10 +125,7 @@ public class RobotContainer {
         () -> m_cannonMotorSubsystem.setCannonPower(0)
       )
     );
-    m_driverController.x().onTrue(
-        new RunCommand(
-            () -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.CLIMB_ELEVATOR_EXTENSION_DISTANCE),
-            m_elevatorSubsystem));
+
 
 
     m_driverController.b().onTrue(
@@ -169,9 +170,16 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp", "leftAmpSpeakerBlueP1"));
+    m_chooser.setDefaultOption("Blue Top Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
+    m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
     SmartDashboard.putData(m_chooser);
     return m_chooser.getSelected();
+  }
+
+  public Command DriveTheAutoPathCommand(AutoPath path) {
+    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
+
+    return paths[0].andThen(paths[1]).andThen(paths[2]);
   }
 
   public Command PathCommand(String trajectoryName, String givenName) {
