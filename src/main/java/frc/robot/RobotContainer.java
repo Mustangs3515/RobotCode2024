@@ -4,22 +4,6 @@
 
 package frc.robot;
 
-import frc.robot.Constants.*;
-import frc.robot.auto.BlueMidAutoPath;
-import frc.robot.auto.BlueTopAutoPath;
-import frc.robot.auto.base.AutoPath;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.commands.SpinIntakeCmd;
-import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.ExampleSubsystem;
-import frc.robot.subsystems.cannon.CannonMotorSubsystem;
-import frc.robot.subsystems.elevator.ElevatorSubsystem;
-import frc.robot.subsystems.helpers.ControlReversalStore;
-import frc.robot.subsystems.helpers.GenerateRamseteFactory;
-import frc.robot.subsystems.intake.IntakeMotorSubsystem;
-import frc.robot.subsystems.storage.BeamBreakSubsystem;
-import frc.robot.subsystems.storage.IndexerSubsystem;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -32,6 +16,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -43,6 +28,23 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants.OperatorConstants;
+import frc.robot.auto.BlueMidAutoPath;
+import frc.robot.auto.BlueTopAutoPath;
+import frc.robot.auto.base.AutoPath;
+import frc.robot.commands.ArcadeDriveCmd;
+import frc.robot.commands.Autos;
+import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.SpinIntakeCmd;
+import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.cannon.CannonMotorSubsystem;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.helpers.ControlReversalStore;
+import frc.robot.subsystems.helpers.GenerateRamseteFactory;
+import frc.robot.subsystems.intake.IntakeMotorSubsystem;
+import frc.robot.subsystems.storage.BeamBreakSubsystem;
+import frc.robot.subsystems.storage.IndexerSubsystem;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -83,6 +85,8 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem, () -> m_driverController.getLeftY(), () -> m_driverController.getLeftX()));
+    
     TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
     m_driverController.leftTrigger().whileTrue(
@@ -170,18 +174,25 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    m_chooser.setDefaultOption("Blue Top Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
-    m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
-    SmartDashboard.putData(m_chooser);
-    return m_chooser.getSelected();
+    return Autos.exampleAuto(m_exampleSubsystem);
   }
 
   public Command DriveTheAutoPathCommand(AutoPath path) {
     RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
-
+    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
     return paths[0].andThen(paths[1]).andThen(paths[2]);
   }
 
+  public Command autoChooser() {
+    m_chooser.setDefaultOption("Blue Top Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
+    m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
+
+    Shuffleboard.getTab("Auto")
+     .add("chooser", m_chooser);
+    return m_chooser.getSelected();
+
+  }
+  /*
   public Command PathCommand(String trajectoryName, String givenName) {
     trajectoryJSON = "PathWeaver/output/" + givenName + ".wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
     try {
@@ -219,4 +230,5 @@ public class RobotContainer {
         ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
     return returnGroup;
   }
+  */
 }

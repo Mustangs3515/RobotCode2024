@@ -1,7 +1,22 @@
 {
+  "HALProvider": {
+    "Other Devices": {
+      "Victor SPX[3]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Victor SPX[5]": {
+        "header": {
+          "open": true
+        }
+      }
+    }
+  },
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/Shuffleboard/Auto/chooser": "String Chooser"
     }
   },
   "NetworkTables Info": {

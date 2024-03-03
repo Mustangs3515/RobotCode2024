@@ -70,13 +70,6 @@ public class DriveSubsystem extends SubsystemBase {
   {
 
     if (this.m_controlReversal.getForwardSide() == "shooter"){
-
-
-
-
-
-
-
       diffDrive.arcadeDrive(-moveSpeed, turnSpeed * DriveConstants.returnLimit);
       return;
     }

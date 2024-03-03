@@ -34,6 +34,7 @@ public class Robot extends TimedRobot {
     // autonomous chooser on the dashboard.
     m_drivetrain = new DriveSubsystem(control);
     m_robotContainer = new RobotContainer();
+    m_robotContainer.autoChooser();
     
   } 
 

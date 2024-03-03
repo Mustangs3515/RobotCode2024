@@ -41,11 +41,10 @@ public class GenerateRamseteFactory {
             return paths;
         } catch (IOException e) {
             System.out.println("You goofed homie");
+            e.printStackTrace();
+
         }
-
-        return null;
-
-
+        return new RamseteCommand[3];
         
     }
 }

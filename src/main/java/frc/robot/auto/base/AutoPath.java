@@ -35,6 +35,6 @@ public class AutoPath {
     }
 
     private Path getTrajectoryPath(String pathName){
-        return Filesystem.getDeployDirectory().toPath().resolve(pathName + ".wpilib.json");
+        return Filesystem.getDeployDirectory().toPath().resolve("PathWeaver/output/" + pathName + ".wpilib.json");
     }
 }
