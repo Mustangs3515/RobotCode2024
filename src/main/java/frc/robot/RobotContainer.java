@@ -42,6 +42,7 @@ import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.helpers.ControlReversalStore;
 import frc.robot.subsystems.helpers.GenerateRamseteFactory;
+import frc.robot.subsystems.helpers.SprintSpeedController;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
 import frc.robot.subsystems.storage.BeamBreakSubsystem;
 import frc.robot.subsystems.storage.IndexerSubsystem;
@@ -67,6 +68,7 @@ public class RobotContainer {
   private final ControlReversalStore m_controlReversal = new ControlReversalStore();
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(m_controlReversal);
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem(m_beamBreakSubsystem);
+  public final SprintSpeedController m_speedController = new SprintSpeedController();
 
 
   // Trajectory Generation for auto
@@ -85,16 +87,18 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem, () -> m_driveSubsystem.getSlowMultiplier()*m_driverController.getLeftY(), () -> m_driveSubsystem.getSlowMultiplier()*m_driverController.getLeftX()));
+    m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem, () -> m_speedController.getSlowMultiplier()*m_driverController.getLeftY(), () -> m_speedController.getSlowMultiplier()*m_driverController.getLeftX()));
     
     TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
 
-    m_driverController.leftBumper().whileTrue( // bumper RIGHt for speaker & left bumper amp
-        new StartEndCommand(
-            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
-            () -> m_cannonMotorSubsystem.setCannonPower(0),
-            m_cannonMotorSubsystem));
+
+    m_driverController.leftBumper().whileTrue(
+      new StartEndCommand(
+        m_speedController::slowDown,
+        m_speedController::stopBeingSlow
+      )
+    );
 
     m_driverController.rightTrigger().whileTrue(
         new StartEndCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), () -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)

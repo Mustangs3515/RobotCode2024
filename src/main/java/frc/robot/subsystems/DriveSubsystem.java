@@ -46,20 +46,6 @@ public class DriveSubsystem extends SubsystemBase {
                                                //just saying you guys know wpilib has a thing to auto convert in to m right -jon
   double victorOutput = 0;
 
-  private double slowMultiplier = 1;
-
-
-  public void slowDown(){
-    this.slowMultiplier = 0.5;
-  }
-
-  public void stopBeingSlow(){
-    this.slowMultiplier = 1;
-  }
-
-  public double getSlowMultiplier(){
-    return this.slowMultiplier;
-  }
 
 
   // m_leftFrontMotor.follow(m_leftBackMotor);
