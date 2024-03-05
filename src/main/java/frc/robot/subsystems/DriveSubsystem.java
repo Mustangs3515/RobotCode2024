@@ -11,6 +11,7 @@ import frc.robot.Constants.encoderValues;
 import frc.robot.subsystems.helpers.ControlReversalStore;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
+import com.fasterxml.jackson.databind.ser.std.StdArraySerializers.DoubleArraySerializer;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -45,6 +46,21 @@ public class DriveSubsystem extends SubsystemBase {
                                                //just saying you guys know wpilib has a thing to auto convert in to m right -jon
   double victorOutput = 0;
 
+  private double slowMultiplier = 1;
+
+
+  public void slowDown(){
+    this.slowMultiplier = 0.5;
+  }
+
+  public void stopBeingSlow(){
+    this.slowMultiplier = 1;
+  }
+
+  public double getSlowMultiplier(){
+    return this.slowMultiplier;
+  }
+
 
   // m_leftFrontMotor.follow(m_leftBackMotor);
   private final DifferentialDrive diffDrive = new DifferentialDrive(m_leftFrontMotor, m_rightFrontMotor);
@@ -61,6 +77,10 @@ public class DriveSubsystem extends SubsystemBase {
     odometry = new DifferentialDriveOdometry(navX.getRotation2d(), getLeftEncoderFeet(), getRightEncoderFeet());
 
     this.m_controlReversal = control;
+
+    
+    m_leftBackMotor.follow(m_leftFrontMotor);
+    m_rightBackMotor.follow(m_rightFrontMotor);
 
   }
   // DifferentialDriveOdometry needs the values in Meters, why do we have it in feet?
@@ -94,12 +114,12 @@ public class DriveSubsystem extends SubsystemBase {
     m_leftFrontMotor.set(ControlMode.PercentOutput, 0);
     m_rightFrontMotor.set(ControlMode.PercentOutput, 0);
 
-    m_leftBackMotor.follow(m_leftFrontMotor);
-    m_rightBackMotor.follow(m_rightFrontMotor);
 
     SmartDashboard.putNumber("Left Encoder Feet", getLeftEncoderFeet());
     SmartDashboard.putNumber("Right Encoder Feet", getRightEncoderFeet());
     SmartDashboard.putNumber("AVERAGE Encoder Feet", getEncoderFeetAverage());
+
+    diffDrive.feed();
   }
 
   public Pose2d getPose(){

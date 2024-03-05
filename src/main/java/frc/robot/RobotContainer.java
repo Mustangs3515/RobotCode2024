@@ -85,30 +85,33 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem, () -> m_driverController.getLeftY(), () -> m_driverController.getLeftX()));
+    m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem, () -> m_driveSubsystem.getSlowMultiplier()*m_driverController.getLeftY(), () -> m_driveSubsystem.getSlowMultiplier()*m_driverController.getLeftX()));
     
     TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
-    m_driverController.leftTrigger().whileTrue(
-        new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem));
+
     m_driverController.leftBumper().whileTrue( // bumper RIGHt for speaker & left bumper amp
         new StartEndCommand(
             () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
             () -> m_cannonMotorSubsystem.setCannonPower(0),
             m_cannonMotorSubsystem));
-    m_driverController.rightTrigger().whileTrue(
-        new RunCommand(
-            () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-            m_cannonMotorSubsystem)
-          .andThen(new WaitCommand(1)).andThen(
-            new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)
-          ));
 
-    m_driverController.leftTrigger().onTrue(
-      new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
-      .andThen(new WaitCommand(1))
-      .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
-      .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
+    m_driverController.rightTrigger().whileTrue(
+        new StartEndCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), () -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)
+        .alongWith(
+          new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem)
+        )
+      );
+
+    m_driverController.leftTrigger().whileTrue(
+      // new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
+      // .andThen(new WaitCommand(1))
+      // .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
+      // .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
+
+      new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor, m_intakeMotorSubsystem)
+      .alongWith(new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+      .until(m_beamBreakSubsystem::isBeamBroken)
     );
 
     // m_driverController.a().onTrue(
@@ -119,16 +122,6 @@ public class RobotContainer {
     //                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
     //                 () -> m_cannonMotorSubsystem.setCannonPower(0))));
 
-
-    // Set elevator to amp height and fire at amp power
-
-    // Shoot into the speaker
-    m_driverController.leftTrigger().onTrue(
-      new StartEndCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        () -> m_cannonMotorSubsystem.setCannonPower(0)
-      )
-    );
 
 
 
