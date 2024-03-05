@@ -123,7 +123,7 @@ public class DriveSubsystem extends SubsystemBase {
   {
     return ((getLeftEncoderFeet() + getRightEncoderFeet())/ 2);
   }
-            
+
   public double getLeftEncoderFeet() {
     double leftEncoderFeet = leftEncoder.get() * encoderValues.kEncoderTick2Feet;
     return leftEncoderFeet;
@@ -144,6 +144,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void driveByVolts(double leftVolts, double rightVolts) {
     m_leftFrontMotor.setVoltage(-leftVolts);
     m_rightFrontMotor.setVoltage(-rightVolts);
+    diffDrive.feed();
   }
 
   @Override

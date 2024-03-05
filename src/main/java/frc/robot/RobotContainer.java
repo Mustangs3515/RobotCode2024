@@ -174,7 +174,8 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Autos.exampleAuto(m_exampleSubsystem);
+    System.out.println("we runnin auton");
+    return m_chooser.getSelected();
   }
 
   public Command DriveTheAutoPathCommand(AutoPath path) {
@@ -192,7 +193,7 @@ public class RobotContainer {
     return m_chooser.getSelected();
 
   }
-  /*
+  
   public Command PathCommand(String trajectoryName, String givenName) {
     trajectoryJSON = "PathWeaver/output/" + givenName + ".wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
     try {
@@ -230,5 +231,5 @@ public class RobotContainer {
         ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
     return returnGroup;
   }
-  */
+  
 }
