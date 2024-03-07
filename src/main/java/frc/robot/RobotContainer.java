@@ -128,8 +128,7 @@ public class RobotContainer {
 
       new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor, m_intakeMotorSubsystem)
       .alongWith(new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
-      .until(m_beamBreakSubsystem::isBeamBroken)
-    );
+      .until(m_beamBreakSubsystem::isBeamBroken));
 
     // m_driverController.a().onTrue(
     //     new RunCommand(
@@ -187,7 +186,7 @@ public class RobotContainer {
     .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
 
 
-    ConditionalCommand spinIntake = (new RunCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+    ConditionalCommand spinIntake = (new RunCommand( m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
     .alongWith(
       new RunCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
     )).unless(m_beamBreakSubsystem::isBeamBroken);
