@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -180,7 +181,26 @@ public class RobotContainer {
   public Command DriveTheAutoPathCommand(AutoPath path) {
     RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
     // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    return paths[0].andThen(paths[1]).andThen(paths[2]);
+    SequentialCommandGroup shootIntoSpeaker = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
+      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
+    .andThen(new WaitCommand(0.5))
+    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
+
+
+    ConditionalCommand spinIntake = (new RunCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+    .alongWith(
+      new RunCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
+    )).unless(m_beamBreakSubsystem::isBeamBroken);
+
+    SequentialCommandGroup stopIntake = new RunCommand(m_intakeMotorSubsystem::stopMotor).andThen(m_indexerSubsystem::stopMotor);
+
+    SequentialCommandGroup shootIntoSpeakerAgain = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
+      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
+    .andThen(new WaitCommand(0.5))
+    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
+
+
+    return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1]).andThen(shootIntoSpeakerAgain).andThen(paths[2]);
   }
 
   public Command autoChooser() {
