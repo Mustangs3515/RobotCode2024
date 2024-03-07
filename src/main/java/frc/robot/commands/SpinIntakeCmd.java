@@ -13,6 +13,7 @@ public class SpinIntakeCmd extends Command {
         this.m_IntakeMotorSubsystem = intake_motor_subsystem;
     }
 
+    // if the beam is not broken, then the intake motor spins
     @Override
     public void execute() {
         if (!m_BeamBreakSubsystem.isBeamBroken()){
@@ -20,6 +21,7 @@ public class SpinIntakeCmd extends Command {
         }
     }
 
+    // stops motor
     @Override
     public void end(boolean interrupted){
          m_IntakeMotorSubsystem.stopMotor();

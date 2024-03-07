@@ -10,6 +10,7 @@ import frc.robot.Constants;
 public class ElevatorSubsystem extends PIDSubsystem {
     private final CANSparkMax m_elevatorMotor = new CANSparkMax(Constants.elevatorConstants.ELEVATOR_MOTOR_CAN_ID,
             MotorType.kBrushless);
+            
     public ElevatorSubsystem(PIDController controller) {
          super(controller);
      }

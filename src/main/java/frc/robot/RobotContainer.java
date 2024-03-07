@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 
+import org.photonvision.PhotonCamera;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -27,17 +29,18 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.Constants.cameraConstants;
 import frc.robot.auto.BlueMidAutoPath;
 import frc.robot.auto.BlueTopAutoPath;
+import frc.robot.auto.RedRightAutoPath;
 import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ArcadeDriveCmd;
-import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
+import frc.robot.commands.CameraIntakeCmd;
 import frc.robot.commands.SpinIntakeCmd;
 import frc.robot.subsystems.DriveSubsystem;
-import frc.robot.subsystems.ExampleSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.helpers.ControlReversalStore;
@@ -60,7 +63,6 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final PIDController pidController = new PIDController(Constants.elevatorConstants.kP,
       Constants.elevatorConstants.kI, Constants.elevatorConstants.kD);
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
   private final BeamBreakSubsystem m_beamBreakSubsystem = new BeamBreakSubsystem();
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
@@ -78,6 +80,10 @@ public class RobotContainer {
   private Path trajectoryPath;
   private RamseteCommand ramseteCommand;
   public DecimalFormat decimalScale = new DecimalFormat("#,###.##");
+
+  //camera instantiation
+  private PhotonCamera noteCamera = new PhotonCamera(cameraConstants.NOTE_CAMERA);
+  private PhotonCamera tagCamera = new PhotonCamera(cameraConstants.TAG_CAMERA);
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController m_driverController = new CommandXboxController(
@@ -102,11 +108,17 @@ public class RobotContainer {
 
     m_driverController.rightTrigger().whileTrue(
         new StartEndCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), () -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)
-        .alongWith(
-          new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem)
-        )
+      );
+    
+      m_driverController.a().whileTrue(
+            new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem)
       );
 
+    m_driverController.y().whileTrue(
+          new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal).alongWith(
+            new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor)
+          ).unless(m_beamBreakSubsystem::isBeamBroken)
+    );
     m_driverController.leftTrigger().whileTrue(
       // new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
       // .andThen(new WaitCommand(1))
@@ -125,9 +137,6 @@ public class RobotContainer {
     //             new StartEndCommand(
     //                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
     //                 () -> m_cannonMotorSubsystem.setCannonPower(0))));
-
-
-
 
     m_driverController.b().onTrue(
       new RunCommand(() -> m_controlReversal.toggleForwardSide())
@@ -154,14 +163,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-    new Trigger(m_exampleSubsystem::exampleCondition)
-        .onTrue(new ExampleCommand(m_exampleSubsystem));
-
-    // Schedule `exampleMethodCommand` when the Xbox controller's B button is
-    // pressed,
-    // cancelling on release.
-    m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
+  
   }
 
   /**
@@ -182,13 +184,14 @@ public class RobotContainer {
   }
 
   public Command autoChooser() {
-    m_chooser.setDefaultOption("Blue Top Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
+    m_chooser.setDefaultOption("Blue Left Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
     m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
+    m_chooser.addOption("Red Right Auto Path", DriveTheAutoPathCommand(new RedRightAutoPath()));
+
 
     Shuffleboard.getTab("Auto")
      .add("chooser", m_chooser);
     return m_chooser.getSelected();
-
   }
   
   public Command PathCommand(String trajectoryName, String givenName) {

@@ -69,7 +69,6 @@ public class DriveSubsystem extends SubsystemBase {
     m_rightBackMotor.follow(m_rightFrontMotor);
 
   }
-  // DifferentialDriveOdometry needs the values in Meters, why do we have it in feet?
 
 
   public void setMotors(double moveSpeed, double turnSpeed)

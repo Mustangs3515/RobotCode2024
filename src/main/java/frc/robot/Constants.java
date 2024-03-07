@@ -24,22 +24,22 @@ public final class Constants {
   }
 
   public static class storageConstants {
-    public static final int BEAM_BREAK_RECEIVER_DIO = 5;
+    public static final int BEAM_BREAK_RECEIVER_DIO = 9;
     public static final int INDEXER_MOTOR_ID = 8;
-    public static final double INDEXER_SPIN_SPEED = 0.2;
+    public static final double INDEXER_SPIN_SPEED = 0.8;
     public static final double INDEXER_SPIN_SPEED_FAST = 0.7;
   }
 
   public static class intakeConstants {
     public static final int TOP_INTAKE_MOTOR_CAN_ID = 10;
     public static final int BOTTOM_INTAKE_MOTOR_CAN_ID = 11;
-    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.3;
+    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.2;
   }
 
   public static class cannonConstants {
 
-    public static final int RIGHT_MOTOR_CAN_ID = 15;
-    public static final int LEFT_MOTOR_CAN_ID = 16;
+    public static final int RIGHT_MOTOR_CAN_ID = 7;
+    public static final int LEFT_MOTOR_CAN_ID = 9;
     public static final double AMP_FIRING_POWER = 0.5;
     public static final double SPEAKER_FIRING_POWER = 1;
   }
@@ -51,7 +51,7 @@ public final class Constants {
     public static final double AMP_ELEVATOR_EXTENSION_DISTANCE = 0;
     public static final double CLIMB_ELEVATOR_EXTENSION_DISTANCE = 0;
     public static final double RESET_ELEVATOR_EXTENSION_DISTANCE = 0;
-    public static final int ELEVATOR_MOTOR_CAN_ID = 7;
+    public static final int ELEVATOR_MOTOR_CAN_ID = 488;
   }
 
   public static class PathWeaverConstants 
@@ -74,10 +74,10 @@ public final class Constants {
     public static final double kRamseteZeta = 0.7;
   }
   public static class encoderValues{
-    public static final int kLeftEncoderChannelA = 8;
-    public static final int kLeftEncoderChannelB = 9;
-    public static final int kRightEncoderChannelA = 6;
-    public static final int kRightEncoderChannelB = 7;
+    public static final int kLeftEncoderChannelA = 0;
+    public static final int kLeftEncoderChannelB = 1;
+    public static final int kRightEncoderChannelA = 2;
+    public static final int kRightEncoderChannelB = 3;
     public static final double kEncoderTick2Feet = (1.0 / 2048.0 * Math.PI * 9 / 17.8) * 0.3048;
   }
 
@@ -94,6 +94,11 @@ public final class Constants {
 
     public static final double kAutoDriveForwardDistance = -7;
     public static final double kAutoDriveForwardSpeed = 0.5;
+  }
+
+  public static class cameraConstants {
+    public static final String TAG_CAMERA = "Arducam_OV9281_USB_Camera";
+    public static final String NOTE_CAMERA = "Microsoft_LifeCam_HD-3000";
   }
 
 }

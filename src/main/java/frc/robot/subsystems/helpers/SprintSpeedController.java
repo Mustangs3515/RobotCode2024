@@ -1,6 +1,8 @@
 package frc.robot.subsystems.helpers;
 
 public class SprintSpeedController {
+    // this class is used for multispeed in the drive
+
     private double slowMultiplier = 1;
 
 

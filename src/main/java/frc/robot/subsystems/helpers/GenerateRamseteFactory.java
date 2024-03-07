@@ -13,6 +13,8 @@ import frc.robot.Robot;
 import frc.robot.auto.base.AutoPath;
 
 public class GenerateRamseteFactory {
+
+    // creates a Ramsete Command and returns it 
     private static RamseteCommand generateRamseteCommand(Trajectory path){
         return new RamseteCommand(
         path,
@@ -30,6 +32,7 @@ public class GenerateRamseteFactory {
 
     }
 
+    // uses the ramsete command to return the auto paths
     public static RamseteCommand[] getAutoTrajectories(AutoPath path){
         
         try {

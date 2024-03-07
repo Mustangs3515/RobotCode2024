@@ -2,9 +2,11 @@ package frc.robot.subsystems.helpers;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class ControlReversalStore {
-        private boolean isForwardIntakeSide = true;
 
+public class ControlReversalStore {
+    // this class reverses the direction of the robot --> either intake side or shooter side
+
+        private boolean isForwardIntakeSide = true;
 
         public void setForwardSideToBeIntake(){
             isForwardIntakeSide = true;

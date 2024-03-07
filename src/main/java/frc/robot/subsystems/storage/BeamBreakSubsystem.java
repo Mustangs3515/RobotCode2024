@@ -16,10 +16,6 @@ public class BeamBreakSubsystem extends SubsystemBase {
     @Override
     public void periodic(){
         this.isBroken = !m_beamBreak.get();
-        if (isBroken){
-            SmartDashboard.putString("BeamBreakSubsystem", "Note ready to fire");
-            return;
-        }
-        SmartDashboard.putString("BeamBreakSubsystem", "No note detected or not ready to fire");
+        SmartDashboard.putBoolean("Beam break", isBroken);
     }
 }
