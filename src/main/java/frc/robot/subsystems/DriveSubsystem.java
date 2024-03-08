@@ -11,7 +11,6 @@ import frc.robot.Constants.encoderValues;
 import frc.robot.subsystems.helpers.ControlReversalStore;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
-import com.fasterxml.jackson.databind.ser.std.StdArraySerializers.DoubleArraySerializer;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
 import edu.wpi.first.math.geometry.Pose2d;
