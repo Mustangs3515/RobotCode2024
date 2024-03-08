@@ -20,7 +20,10 @@ public class IntakeMotorSubsystem extends PIDSubsystem {
     private RelativeEncoder intakeBottomEncoder = m_motorTop.getEncoder();
 
     public IntakeMotorSubsystem() {
-        super(new PIDController(0, 0, 0));
+        super(new PIDController(Constants.intakeConstants.kP,
+            Constants.intakeConstants.kI,
+            Constants.intakeConstants.kD)
+        );
         m_motorTop.setInverted(true);
         m_motorBottom.setInverted(true);
     }

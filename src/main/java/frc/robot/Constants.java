@@ -34,6 +34,10 @@ public final class Constants {
     public static final int TOP_INTAKE_MOTOR_CAN_ID = 10;
     public static final int BOTTOM_INTAKE_MOTOR_CAN_ID = 11;
     public static final double INTAKE_MOTOR_SPIN_SPEED = 0.2;
+
+    public static final double kP = 2;
+    public static final double kI = 0.5;
+    public static final double kD = 0;
   }
 
   public static class cannonConstants {
@@ -42,6 +46,10 @@ public final class Constants {
     public static final int LEFT_MOTOR_CAN_ID = 9;
     public static final double AMP_FIRING_POWER = 0.5;
     public static final double SPEAKER_FIRING_POWER = 1;
+
+    public static final double kP = 2;
+    public static final double kI = 0.5;
+    public static final double kD = 0;
   }
 
   public static class elevatorConstants {
