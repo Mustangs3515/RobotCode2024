@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -7,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.helpers.ControlReversalStore;
+import frc.robot.Constants.DriveConstants;
 
 import org.photonvision.PhotonCamera;
 
@@ -17,6 +19,7 @@ public class CameraIntakeCmd extends Command {
     private ShuffleboardTab tab = Shuffleboard.getTab("vision speeds");
     private GenericEntry fastentry = tab.add("fastSpeed", .7).getEntry();
     private GenericEntry slowentry = tab.add("slowSpeed", .6).getEntry();
+    private PIDController pid = new PIDController(DriveConstants.kPCamSteer, DriveConstants.kICamSteer, DriveConstants.kDCamSteer);
     private double fastSpeed = 0.7;
     private double slowSpeed = 0.6;
     
@@ -33,6 +36,8 @@ public class CameraIntakeCmd extends Command {
     @Override
     public void initialize() {
         System.out.println("CameraIntakeCmd started!");
+        pid.reset();
+        pid.setSetpoint(0);
     }
 
     @Override
@@ -51,17 +56,19 @@ public class CameraIntakeCmd extends Command {
 
         //yaw of note
         double yaw = (result.getBestTarget().getYaw());
-        slowentry.getDouble(slowSpeed);
-        fastentry.getDouble(fastSpeed);
+        // slowentry.getDouble(slowSpeed);
+        // fastentry.getDouble(fastSpeed);
 
         //move robot forward if note detected 
-        if (Math.abs(yaw) > .05) {
-            this.driveSubsystem.setMotors(0, slowSpeed * Math.signum(yaw));
-            return;
-        } else if (Math.abs(yaw) > .25) {
-            this.driveSubsystem.setMotors(0, fastSpeed * Math.signum(yaw));
-            return;
-        }
+        // if (Math.abs(yaw) > .05) {
+        //     this.driveSubsystem.setMotors(0, slowSpeed * Math.signum(yaw));
+        //     return;
+        // } else if (Math.abs(yaw) > .25) {
+        //     this.driveSubsystem.setMotors(0, fastSpeed * Math.signum(yaw));
+        //     return;
+        // }
+        this.driveSubsystem.setMotors(0, pid.calculate(yaw));
+
         //start and end revving intake up
         double speed = 0;
         if (m_controlReversal.getForwardSide() == "intake"){

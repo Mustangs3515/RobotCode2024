@@ -102,6 +102,11 @@ public final class Constants {
 
     public static final double kAutoDriveForwardDistance = -7;
     public static final double kAutoDriveForwardSpeed = 0.5;
+
+    public static final double kPCamSteer = 0.05;
+    public static final double kICamSteer = 0;
+    public static final double kDCamSteer = 0;
+    
   }
 
   public static class cameraConstants {
