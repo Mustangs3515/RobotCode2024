@@ -22,6 +22,11 @@ public class IndexerSubsystem extends SubsystemBase {
         this.m_indexer_motor.set(Constants.storageConstants.INDEXER_SPIN_SPEED);
     }
 
+    public void reverseMotor()
+    {
+        this.m_indexer_motor.set(-Constants.storageConstants.INDEXER_SPIN_SPEED);
+    }
+
     public void stopMotor(){
         this.m_indexer_motor.set(0);
     }

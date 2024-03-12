@@ -7,6 +7,7 @@ package frc.robot;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.Instant;
 
 import org.photonvision.PhotonCamera;
 import edu.wpi.first.math.controller.PIDController;
@@ -23,8 +24,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -34,7 +37,10 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.cameraConstants;
 import frc.robot.auto.BlueMidAutoPath;
 import frc.robot.auto.BlueTopAutoPath;
+import frc.robot.auto.RedMidAutoPath;
 import frc.robot.auto.RedRightAutoPath;
+import frc.robot.auto.RightRedLeave;
+import frc.robot.auto.LeftBlueLeave;
 import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ArcadeDriveCmd;
 import frc.robot.commands.CameraIntakeCmd;
@@ -97,7 +103,7 @@ public class RobotContainer {
     // Configure the trigger bindings
 
 
-    m_driverController.leftBumper().whileTrue(
+    m_driverController.b().whileTrue(
       new StartEndCommand(
         m_speedController::slowDown,
         m_speedController::stopBeingSlow
@@ -112,14 +118,14 @@ public class RobotContainer {
             new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem)
       );
 
-    m_driverController.y().whileTrue(
+    m_driverController.rightBumper().whileTrue(
           new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal).alongWith(
             new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor)
           ).unless(m_beamBreakSubsystem::isBeamBroken)
     );
     m_driverController.leftTrigger().whileTrue(
-      // new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
-      // .andThen(new WaitCommand(1))
+      // new RunCommand(()* -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
+      // .andThen(new Wa/*itCommand(1))
       // .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
       // .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
 
@@ -135,9 +141,18 @@ public class RobotContainer {
     //                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
     //                 () -> m_cannonMotorSubsystem.setCannonPower(0))));
 
-    m_driverController.b().onTrue(
-      new RunCommand(() -> m_controlReversal.toggleForwardSide())
+    m_driverController.leftBumper().whileTrue(
+      new StartEndCommand(m_intakeMotorSubsystem::reverseSpinMotor, m_intakeMotorSubsystem::stopMotor, m_intakeMotorSubsystem)
+      .alongWith(new StartEndCommand(m_indexerSubsystem::reverseMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
     );
+
+    m_driverController.x().whileTrue(
+      new StartEndCommand(m_intakeMotorSubsystem::shakeItUp, m_intakeMotorSubsystem::stopMotor, m_intakeMotorSubsystem)
+      .alongWith(new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    );
+
+    // m_driverController.x().whileTrue(
+    //   new SequentialCommandGroup(new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal)));
 
     configureBindings();
 
@@ -177,34 +192,168 @@ public class RobotContainer {
   public Command DriveTheAutoPathCommand(AutoPath path) {
     RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
     // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    SequentialCommandGroup shootIntoSpeaker = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
-      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
+    SequentialCommandGroup shootIntoSpeaker = 
+    (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), 
+        m_cannonMotorSubsystem
+      )
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
+    .andThen(
+      new WaitCommand(0.5)
+    )
+    .andThen(
+        new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+        .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    );
+
+  
+    ParallelRaceGroup spinIntake = 
+    (
+      new InstantCommand( m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+        
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
+      )
+    ).until(m_beamBreakSubsystem::isBeamBroken);
+
+    SequentialCommandGroup stopIntake = 
+    new InstantCommand(m_intakeMotorSubsystem::stopMotor)
+    .andThen(
+      new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)
+    );
+
+    SequentialCommandGroup shootIntoSpeakerAgain = (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem
+      ).alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
     .andThen(new WaitCommand(0.5))
-    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
-
-
-    ConditionalCommand spinIntake = (new RunCommand( m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
-    .alongWith(
-      new RunCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
-    )).unless(m_beamBreakSubsystem::isBeamBroken);
-
-    SequentialCommandGroup stopIntake = new RunCommand(m_intakeMotorSubsystem::stopMotor).andThen(m_indexerSubsystem::stopMotor);
-
-    SequentialCommandGroup shootIntoSpeakerAgain = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
-      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-    .andThen(new WaitCommand(0.5))
-    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
-
+    .andThen((
+      new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+      .alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    ));
 
     return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1]).andThen(shootIntoSpeakerAgain).andThen(paths[2]);
   }
 
+  // Uses only 2 parameters of Path
+  public Command DoubleAutoPathCommand(AutoPath path) {
+    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
+    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
+    SequentialCommandGroup shootIntoSpeaker = 
+    (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), 
+        m_cannonMotorSubsystem
+      )
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
+    .andThen(
+      new WaitCommand(0.5)
+    )
+    .andThen(
+        new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+        .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    );
+    ParallelRaceGroup spinIntake = 
+    (
+      new InstantCommand( m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+        
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
+      )
+    ).until(m_beamBreakSubsystem::isBeamBroken);
+
+    SequentialCommandGroup stopIntake = 
+    new InstantCommand(m_intakeMotorSubsystem::stopMotor)
+    .andThen(
+      new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)
+    );
+
+    SequentialCommandGroup shootIntoSpeakerAgain = (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem
+      ).alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
+    .andThen(new WaitCommand(0.5))
+    .andThen((
+      new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+      .alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    ));
+
+    return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1]).andThen(shootIntoSpeakerAgain);
+  }
+
+  public Command SingleAutoPathCommand(AutoPath path) {
+    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
+    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
+    SequentialCommandGroup shootIntoSpeaker = 
+    (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), 
+        m_cannonMotorSubsystem
+      )
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
+    .andThen(
+      new WaitCommand(0.5)
+    )
+    .andThen(
+        new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+        .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    );
+    return shootIntoSpeaker.andThen((paths[0]));
+  }
+
+   public Command onlyShootCommand() {
+    SequentialCommandGroup shootIntoSpeaker = 
+    (
+      new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), 
+        m_cannonMotorSubsystem
+      )
+      .alongWith(
+        new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)
+      )
+    )
+    .andThen(
+      new WaitCommand(0.5)
+    )
+    .andThen(
+        new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+        .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    );
+    return shootIntoSpeaker;
+  }
+
   public Command autoChooser() {
-    m_chooser.setDefaultOption("Blue Left Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
-    m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
-    m_chooser.addOption("Red Right Auto Path", DriveTheAutoPathCommand(new RedRightAutoPath()));
-
-
+    //Shoots into Speaker Twice and leaves the community
+    m_chooser.setDefaultOption("Blue Left Auto Path 2", DriveTheAutoPathCommand(new BlueTopAutoPath())); 
+    m_chooser.addOption("Blue Mid Auto Path 2", DriveTheAutoPathCommand(new BlueMidAutoPath())); 
+    m_chooser.addOption("Red Right Auto Path 2", DriveTheAutoPathCommand(new RedRightAutoPath()));
+    m_chooser.addOption("Red Mid Auto Path 2", DriveTheAutoPathCommand(new RedMidAutoPath()));
+    //Shoots in the speaker once and leaves the community
+    m_chooser.addOption("Red Right Auto Path 1", SingleAutoPathCommand(new RightRedLeave()));
+    m_chooser.addOption("Blue Left Auto Path 1", SingleAutoPathCommand(new LeftBlueLeave()));
+    //Shoots in the Speaker twice and DOESN'T leave the community
+    m_chooser.addOption("Red Mid Auto No Leave 2", DoubleAutoPathCommand(new RightRedLeave()));
+    m_chooser.addOption("Blue Mid Auto No Leave 2", DoubleAutoPathCommand(new LeftBlueLeave()));
+    //Only Shoots
+    m_chooser.addOption("Only Shoot", onlyShootCommand());
+    //Doesn't do anything
+    m_chooser.addOption("No Auto", null);
     Shuffleboard.getTab("Auto")
      .add("chooser", m_chooser);
     return m_chooser.getSelected();

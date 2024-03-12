@@ -26,14 +26,14 @@ public final class Constants {
   public static class storageConstants {
     public static final int BEAM_BREAK_RECEIVER_DIO = 9;
     public static final int INDEXER_MOTOR_ID = 8;
-    public static final double INDEXER_SPIN_SPEED = 0.8;
+    public static final double INDEXER_SPIN_SPEED = 0.85;
     public static final double INDEXER_SPIN_SPEED_FAST = 0.7;
   }
 
   public static class intakeConstants {
     public static final int TOP_INTAKE_MOTOR_CAN_ID = 10;
     public static final int BOTTOM_INTAKE_MOTOR_CAN_ID = 11;
-    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.2;
+    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.4;
 
     public static final double kP = 2;
     public static final double kI = 0.5;

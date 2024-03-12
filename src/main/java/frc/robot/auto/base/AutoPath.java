@@ -18,6 +18,19 @@ public class AutoPath {
         this.p2Path = p2PathName;
         this.p3Path = p3PathName;
     }
+
+    public AutoPath(String p1PathName)
+    {
+        this.p1Path = p1PathName;
+        
+    }
+
+    public AutoPath(String p1PathName, String p2PathName)
+    {
+        this.p1Path = p1PathName;
+        this.p2Path = p2PathName;
+    }
+
     public Trajectory accessTrajectory(String path) throws IOException {
         return TrajectoryUtil.fromPathweaverJson(this.getTrajectoryPath(path));
     }
