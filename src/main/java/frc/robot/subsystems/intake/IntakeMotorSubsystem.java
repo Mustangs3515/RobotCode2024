@@ -14,11 +14,11 @@ public class IntakeMotorSubsystem extends SubsystemBase {
         m_motorTop.setInverted(true);
         m_motorBottom.setInverted(true);
     }
-    public void spinMotor() {
-        this.m_motorTop.set(Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED);
-        this.m_motorBottom.set(Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED);
+    public void spinMotor(double topSpeed, double bottomSpeed) {
+        this.m_motorTop.set(topSpeed);
+        this.m_motorBottom.set(bottomSpeed);
     }
-
+    
     public void stopMotor() {
         this.m_motorTop.set(0);
         this.m_motorBottom.set(0);

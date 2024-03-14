@@ -21,14 +21,19 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.cameraConstants;
@@ -36,14 +41,19 @@ import frc.robot.auto.BlueMidAutoPath;
 import frc.robot.auto.BlueTopAutoPath;
 import frc.robot.auto.RedMidAutoPath;
 import frc.robot.auto.RedRightAutoPath;
+import frc.robot.auto.RightRedLeave;
+import frc.robot.auto.LeftBlueLeave;
 import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ArcadeDriveCmd;
 import frc.robot.commands.CameraIntakeCmd;
+import frc.robot.commands.CannonCmd;
+import frc.robot.commands.DriveForwardCmd;
+import frc.robot.commands.IndexerCmd;
+import frc.robot.commands.SpinIntakeCmd;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
 import frc.robot.subsystems.helpers.ControlReversalStore;
-import frc.robot.subsystems.helpers.GenerateRamseteFactory;
 import frc.robot.subsystems.helpers.SprintSpeedController;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
 import frc.robot.subsystems.storage.BeamBreakSubsystem;
@@ -97,56 +107,55 @@ public class RobotContainer {
     TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
 
-
-    m_driverController.leftBumper().whileTrue(
+    // B button for slow speed
+    m_driverController.b().whileTrue(
       new StartEndCommand(
         m_speedController::slowDown,
         m_speedController::stopBeingSlow
       )
     );
 
+    // shoot the cannon with the right trigger
     m_driverController.rightTrigger().whileTrue(
-        new StartEndCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), () -> m_cannonMotorSubsystem.setCannonPower(0), m_cannonMotorSubsystem)
-      );
-    
-      m_driverController.a().whileTrue(
-            new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem)
-      );
-
-    m_driverController.y().whileTrue(
-          new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal).alongWith(
-            new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor)
-          ).unless(m_beamBreakSubsystem::isBeamBroken)
+      new CannonCmd(m_cannonMotorSubsystem, Constants.cannonConstants.SPEAKER_FIRING_POWER)
     );
-    m_driverController.leftTrigger().whileTrue(
-      // new RunCommand(()* -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
-      // .andThen(new Wa/*itCommand(1))
-      // .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
-      // .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
 
-      new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor, m_intakeMotorSubsystem)
-      .alongWith(new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
+    // run the indexer forward with the A button
+    m_driverController.a().whileTrue(
+      new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED)
+    );
+
+    // right bumper is the auto intake
+    m_driverController.rightBumper().whileTrue(
+          new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal).alongWith(
+            new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED))
+            .unless(m_beamBreakSubsystem::isBeamBroken) //might need to remove this line since beambreak is already coded in SpinIntakeCmd
+    );
+
+    // Left Trigger is the Intake button --> runs intake & indexer forward
+    m_driverController.leftTrigger().whileTrue(
+      new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED)
+      .alongWith(new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED))
       .until(m_beamBreakSubsystem::isBeamBroken));
 
-    // m_driverController.a().onTrue(
-    //     new RunCommand(
-    //         () -> m_elevatorSubsystem.setSetpoint(Constants.elevatorConstants.RESET_ELEVATOR_EXTENSION_DISTANCE),
-    //         m_elevatorSubsystem).andThen(
-    //             new StartEndCommand(
-    //                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.AMP_FIRING_POWER),
-    //                 () -> m_cannonMotorSubsystem.setCannonPower(0))));
+      // Left Bumper is for Reverse Intake --> spin intake & indexer in reverse
+      m_driverController.leftBumper().whileTrue(
+        new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_REVERSE_SPEED, Constants.intakeConstants.INTAKE_MOTOR_REVERSE_SPEED)
+        .alongWith(new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_REVERSE_SPEED))
+      );
 
-    m_driverController.b().onTrue(
-      new RunCommand(() -> m_controlReversal.toggleForwardSide())
-    );
+      // X Button for SOS --> runs Intake with Spark 10 Forward & Spark 11 Reverse + the Indexer Forward
+      m_driverController.x().whileTrue(
+        new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED, Constants.intakeConstants.INTAKE_MOTOR_REVERSE_SPEED)
+        .alongWith(new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED))
+      );
 
-    // m_driverController.x().whileTrue(
-    //   new SequentialCommandGroup(new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal)));
+      // Right Stick Click
+      m_driverController.rightStick().whileTrue(
+        new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal)
+      );
 
     configureBindings();
-
-    // m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
-    // SmartDashboard.putData(m_chooser);
   }
 
   /**
@@ -164,7 +173,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-  
+
   }
 
   /**
@@ -178,37 +187,85 @@ public class RobotContainer {
     return m_chooser.getSelected();
   }
 
-  public Command DriveTheAutoPathCommand(AutoPath path) {
-    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
-    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    SequentialCommandGroup shootIntoSpeaker = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
-      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-    .andThen(new WaitCommand(0.5))
-    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
+  public Command noAuto()
+  {
+    return Commands.runOnce(() -> System.out.println("No sirree"));
+  }
 
+  public Command shootOnce()
+  {
+    return new SequentialCommandGroup(
+      new ParallelDeadlineGroup(
+        new WaitCommand(1),
+        new CannonCmd(m_cannonMotorSubsystem, Constants.cannonConstants.SPEAKER_FIRING_POWER)),
+      new ParallelDeadlineGroup(
+        new WaitCommand(2),
+        new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED)),
+      new ParallelDeadlineGroup(
+        new WaitCommand(1),
+        new CannonCmd(m_cannonMotorSubsystem, 0),
+        new IndexerCmd(m_indexerSubsystem, 0)
+      ));
+  }
 
-    ConditionalCommand spinIntake = (new RunCommand( m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
-    .alongWith(
-      new RunCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)
-    )).unless(m_beamBreakSubsystem::isBeamBroken);
+  public Command shootOnceThreeSecondsLater()
+  {
+    return new SequentialCommandGroup(
+      new ParallelDeadlineGroup(
+        new WaitCommand(3),
+        new CannonCmd(m_cannonMotorSubsystem, Constants.cannonConstants.SPEAKER_FIRING_POWER)),
+      new ParallelDeadlineGroup(
+        new WaitCommand(4),
+        new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED)),
+      new CannonCmd(m_cannonMotorSubsystem, 0),
+      new IndexerCmd(m_indexerSubsystem, 0));
+  }
 
-    SequentialCommandGroup stopIntake = new RunCommand(m_intakeMotorSubsystem::stopMotor).andThen(m_indexerSubsystem::stopMotor);
+  public Command DriveForward2Feet()
+  {
+    return new DriveForwardCmd(m_driveSubsystem, -0.5);
+  }
 
-    SequentialCommandGroup shootIntoSpeakerAgain = (new RunCommand(() -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER), m_cannonMotorSubsystem)
-      .alongWith(new RunCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-    .andThen(new WaitCommand(0.5))
-    .andThen((new RunCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem).alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
+  // public Command midAutoTwoNotes()
+  // {
+  //   return new SequentialCommandGroup(
+  //     shootOnce(),
+  //     new WaitCommand(0.5),
+  //     new ParallelRaceGroup(
+  //       new DriveForwardCmd(m_driveSubsystem, 5)),
+  //       //new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED)),
+  //     new DriveForwardCmd(m_driveSubsystem, -m_driveSubsystem.getEncoderFeetAverage()),
+  //     shootOnce() 
+  //   );
+  // }
 
-
-    return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1]).andThen(shootIntoSpeakerAgain).andThen(paths[2]);
+  public Command midAutoTwoNotes()
+  {
+    return new SequentialCommandGroup(
+      shootOnce(),
+      new ParallelDeadlineGroup(
+        new SequentialCommandGroup(
+          new DriveForwardCmd(m_driveSubsystem, -5),
+          new WaitCommand(1),
+          new DriveForwardCmd(m_driveSubsystem, 5)),
+        new ParallelDeadlineGroup(
+          new WaitCommand(2),
+          new IndexerCmd(m_indexerSubsystem, Constants.storageConstants.INDEXER_SPIN_SPEED),
+          new SpinIntakeCmd(m_beamBreakSubsystem, m_intakeMotorSubsystem, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED, Constants.intakeConstants.INTAKE_MOTOR_SPIN_SPEED)),
+        shootOnce()));
   }
 
   public Command autoChooser() {
-    m_chooser.setDefaultOption("Blue Left Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
-    m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
-    m_chooser.addOption("Red Right Auto Path", DriveTheAutoPathCommand(new RedRightAutoPath()));
-    m_chooser.addOption("Red Mid Auto Path", DriveTheAutoPathCommand(new RedMidAutoPath()));
+    // m_chooser.setDefaultOption("Blue Left Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
+    // m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
+    // m_chooser.addOption("Red Right Auto Path", DriveTheAutoPathCommand(new RedRightAutoPath()));
+    // m_chooser.addOption("Red Mid Auto Path", DriveTheAutoPathCommand(new RedMidAutoPath()));
 
+    m_chooser.addOption("No Auto", noAuto());
+    m_chooser.addOption("Only Shoot", shootOnce());
+    m_chooser.addOption("Shoot Once 3 Seconds Later", shootOnceThreeSecondsLater());
+    m_chooser.addOption("Drive Forward 2 Feet", DriveForward2Feet());
+    m_chooser.addOption("Mid 2 Note", midAutoTwoNotes());
 
     Shuffleboard.getTab("Auto")
      .add("chooser", m_chooser);

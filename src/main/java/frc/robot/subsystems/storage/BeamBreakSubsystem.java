@@ -6,7 +6,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class BeamBreakSubsystem extends SubsystemBase { 
-    private final DigitalInput m_beamBreak = new DigitalInput(Constants.storageConstants.BEAM_BREAK_RECEIVER_DIO);
+    private final static DigitalInput m_beamBreak = new DigitalInput(Constants.storageConstants.BEAM_BREAK_RECEIVER_DIO);
 
     private boolean isBroken;
     public boolean isBeamBroken(){

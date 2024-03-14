@@ -26,14 +26,16 @@ public final class Constants {
   public static class storageConstants {
     public static final int BEAM_BREAK_RECEIVER_DIO = 9;
     public static final int INDEXER_MOTOR_ID = 8;
-    public static final double INDEXER_SPIN_SPEED = 0.8;
-    public static final double INDEXER_SPIN_SPEED_FAST = 0.7;
+    public static final double INDEXER_SPIN_SPEED = 0.85;
+    public static final double INDEXER_REVERSE_SPEED = -0.85;
   }
 
   public static class intakeConstants {
     public static final int TOP_INTAKE_MOTOR_CAN_ID = 10;
     public static final int BOTTOM_INTAKE_MOTOR_CAN_ID = 11;
-    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.3;
+    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.4;
+    public static final double INTAKE_MOTOR_REVERSE_SPEED = -0.4;
+
 
     public static final double kP = 2;
     public static final double kI = 0.5;
@@ -86,7 +88,7 @@ public final class Constants {
     public static final int kLeftEncoderChannelB = 1;
     public static final int kRightEncoderChannelA = 2;
     public static final int kRightEncoderChannelB = 3;
-    public static final double kEncoderTick2Feet = (1.0 / 2048.0 * Math.PI * 9 / 17.8) * 0.3048;
+    public static final double kEncoderTick2Feet = 1.0 / 2048.0 * Math.PI * 9 / 17.8;
   }
 
   public static class DriveConstants{
@@ -102,11 +104,15 @@ public final class Constants {
 
     public static final double kAutoDriveForwardDistance = -7;
     public static final double kAutoDriveForwardSpeed = 0.5;
+
+    public static final double kPCameraSteer = 0.25;
+    public static final double kICameraSteer = 0;
+    public static final double kDCameraSteer = 0;
+
   }
 
   public static class cameraConstants {
     public static final String TAG_CAMERA = "Arducam_OV9281_USB_Camera";
     public static final String NOTE_CAMERA = "Microsoft_LifeCam_HD-3000";
   }
-
 }

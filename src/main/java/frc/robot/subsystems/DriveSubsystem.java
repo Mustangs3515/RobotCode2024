@@ -134,7 +134,7 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   public double getRightEncoderFeet() {
-    double rightEncoderFeet = -rightEncoder.get() * encoderValues.kEncoderTick2Feet;
+    double rightEncoderFeet = rightEncoder.get() * encoderValues.kEncoderTick2Feet;
     return rightEncoderFeet;
   }
 

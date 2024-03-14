@@ -9,17 +9,17 @@ import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 
 public class CannonMotorSubsystem extends PIDSubsystem{
-    private final CANSparkMax m_rightMotor = new CANSparkMax(Constants.cannonConstants.RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
-    private final CANSparkMax m_leftMotor = new CANSparkMax(Constants.cannonConstants.LEFT_MOTOR_CAN_ID, MotorType.kBrushless);
-
-    // sets the two cansparkmaxes for the shooter to amp power
-    public void setCannonPower(double ampFiringPower){
-        m_rightMotor.set(ampFiringPower);
-        m_leftMotor.set(ampFiringPower);
-    }
+    private final static CANSparkMax m_rightMotor = new CANSparkMax(Constants.cannonConstants.RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
+    private final static CANSparkMax m_leftMotor = new CANSparkMax(Constants.cannonConstants.LEFT_MOTOR_CAN_ID, MotorType.kBrushless);
 
     public CannonMotorSubsystem(){
         super(new PIDController(Constants.cannonConstants.kP, Constants.cannonConstants.kI, Constants.cannonConstants.kD));
+    }
+
+    // sets the two cansparkmaxes for the shooter to amp power
+    public void setCannonPower(double firingPower){
+        m_rightMotor.set(firingPower);
+        m_leftMotor.set(firingPower);
     }
 
     // turns off the cansparkmaxes 
