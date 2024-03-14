@@ -33,7 +33,7 @@ public final class Constants {
   public static class intakeConstants {
     public static final int TOP_INTAKE_MOTOR_CAN_ID = 10;
     public static final int BOTTOM_INTAKE_MOTOR_CAN_ID = 11;
-    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.2;
+    public static final double INTAKE_MOTOR_SPIN_SPEED = 0.3;
 
     public static final double kP = 2;
     public static final double kI = 0.5;

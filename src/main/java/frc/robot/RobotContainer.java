@@ -34,6 +34,7 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.cameraConstants;
 import frc.robot.auto.BlueMidAutoPath;
 import frc.robot.auto.BlueTopAutoPath;
+import frc.robot.auto.RedMidAutoPath;
 import frc.robot.auto.RedRightAutoPath;
 import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ArcadeDriveCmd;
@@ -118,8 +119,8 @@ public class RobotContainer {
           ).unless(m_beamBreakSubsystem::isBeamBroken)
     );
     m_driverController.leftTrigger().whileTrue(
-      // new RunCommand(() -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
-      // .andThen(new WaitCommand(1))
+      // new RunCommand(()* -> m_intakeMotorSubsystem.spinMotor(), m_intakeMotorSubsystem)
+      // .andThen(new Wa/*itCommand(1))
       // .andThen(new RunCommand(() -> m_intakeMotorSubsystem.stopMotor(), m_intakeMotorSubsystem))
       // .andThen(new RunCommand(() -> m_indexerSubsystem.spinMotor()).until(m_beamBreakSubsystem::isBeamBroken))
 
@@ -138,6 +139,9 @@ public class RobotContainer {
     m_driverController.b().onTrue(
       new RunCommand(() -> m_controlReversal.toggleForwardSide())
     );
+
+    // m_driverController.x().whileTrue(
+    //   new SequentialCommandGroup(new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal)));
 
     configureBindings();
 
@@ -203,6 +207,7 @@ public class RobotContainer {
     m_chooser.setDefaultOption("Blue Left Auto Path", DriveTheAutoPathCommand(new BlueTopAutoPath()));
     m_chooser.addOption("Blue Mid Auto Path", DriveTheAutoPathCommand(new BlueMidAutoPath()));
     m_chooser.addOption("Red Right Auto Path", DriveTheAutoPathCommand(new RedRightAutoPath()));
+    m_chooser.addOption("Red Mid Auto Path", DriveTheAutoPathCommand(new RedMidAutoPath()));
 
 
     Shuffleboard.getTab("Auto")
