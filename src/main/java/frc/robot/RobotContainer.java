@@ -10,6 +10,11 @@ import java.text.DecimalFormat;
 import java.time.Instant;
 
 import org.photonvision.PhotonCamera;
+
+import com.fasterxml.jackson.core.sym.Name;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -56,16 +61,16 @@ import frc.robot.subsystems.storage.IndexerSubsystem;
  */
 public class RobotContainer {
   private final ControlReversalStore m_controlReversal = new ControlReversalStore();
+  public final SprintSpeedController m_speedController = new SprintSpeedController();
 
   // The robot's subsystems and commands are defined here...
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(m_controlReversal);
   private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
-  public final SprintSpeedController m_speedController = new SprintSpeedController();
 
   // Trajectory Generation for auto
-  private final SendableChooser<Command> m_chooser = new SendableChooser<>();
+  private SendableChooser<Command> m_chooser = new SendableChooser<>();
   public DecimalFormat decimalScale = new DecimalFormat("#,###.##");
 
   // camera instantiation
@@ -80,16 +85,14 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    m_chooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
+    m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
+    // Doesn't do anything
+    m_chooser.addOption("No Auto", null);
+    Shuffleboard.getTab("Auto")
+        .add("chooser", m_chooser);
 
-
-    configureBindings();
-
-    // m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
-    // SmartDashboard.putData(m_chooser);
-  }
-
-  /* 
-   *     SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
+    NamedCommands.registerCommand("Shoot", (new InstantCommand(
         () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
         m_cannonMotorSubsystem)
         .alongWith(
@@ -98,17 +101,20 @@ public class RobotContainer {
             new WaitCommand(0.5))
         .andThen(
             new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
-    ParallelRaceGroup spinIntake = (new InstantCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
+    NamedCommands.registerCommand("Intake", (new InstantCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
 
         .alongWith(
             new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)))
-        .until(m_beamBreakSubsystem::isBeamBroken);
+        .until(m_indexerSubsystem::isBeamBroken));
+    
+    NamedCommands.registerCommand("Stop", new InstantCommand(m_intakeMotorSubsystem::stopMotor));
 
-    SequentialCommandGroup stopIntake = new InstantCommand(m_intakeMotorSubsystem::stopMotor)
-        .andThen(
-            new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem));
-   */
+    configureBindings();
+
+    // m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
+    // SmartDashboard.putData(m_chooser);
+  }
 
   /**
    * Use this method to define your trigger->command mappings. Triggers can be
@@ -202,11 +208,6 @@ public class RobotContainer {
 
   public Command autoChooser() {
     
-    m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
-    // Doesn't do anything
-    m_chooser.addOption("No Auto", null);
-    Shuffleboard.getTab("Auto")
-        .add("chooser", m_chooser);
     return m_chooser.getSelected();
   }
 
