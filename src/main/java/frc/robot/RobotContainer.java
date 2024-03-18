@@ -35,23 +35,14 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.cameraConstants;
-import frc.robot.auto.BlueMidAutoPath;
-import frc.robot.auto.BlueTopAutoPath;
-import frc.robot.auto.RedMidAutoPath;
-import frc.robot.auto.RedRightAutoPath;
-import frc.robot.auto.RightRedLeave;
-import frc.robot.auto.LeftBlueLeave;
-import frc.robot.auto.base.AutoPath;
 import frc.robot.commands.ArcadeDriveCmd;
 import frc.robot.commands.CameraIntakeCmd;
+import frc.robot.helpers.ControlReversalStore;
+import frc.robot.helpers.SprintSpeedController;
 import frc.robot.subsystems.DriveSubsystem;
 import frc.robot.subsystems.cannon.CannonMotorSubsystem;
 import frc.robot.subsystems.elevator.ElevatorSubsystem;
-import frc.robot.subsystems.helpers.ControlReversalStore;
-import frc.robot.subsystems.helpers.GenerateRamseteFactory;
-import frc.robot.subsystems.helpers.SprintSpeedController;
 import frc.robot.subsystems.intake.IntakeMotorSubsystem;
-import frc.robot.subsystems.storage.BeamBreakSubsystem;
 import frc.robot.subsystems.storage.IndexerSubsystem;
 
 /**
@@ -64,24 +55,17 @@ import frc.robot.subsystems.storage.IndexerSubsystem;
  * subsystems, commands, and trigger mappings) should be declared here.
  */
 public class RobotContainer {
+  private final ControlReversalStore m_controlReversal = new ControlReversalStore();
+
   // The robot's subsystems and commands are defined here...
-  private final PIDController pidController = new PIDController(Constants.elevatorConstants.kP,
-      Constants.elevatorConstants.kI, Constants.elevatorConstants.kD);
-  private final BeamBreakSubsystem m_beamBreakSubsystem = new BeamBreakSubsystem();
   private final IntakeMotorSubsystem m_intakeMotorSubsystem = new IntakeMotorSubsystem();
   private final CannonMotorSubsystem m_cannonMotorSubsystem = new CannonMotorSubsystem();
-  private final ElevatorSubsystem m_elevatorSubsystem = new ElevatorSubsystem(pidController);
-  private final ControlReversalStore m_controlReversal = new ControlReversalStore();
   private final DriveSubsystem m_driveSubsystem = new DriveSubsystem(m_controlReversal);
-  private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem(m_beamBreakSubsystem);
+  private final IndexerSubsystem m_indexerSubsystem = new IndexerSubsystem();
   public final SprintSpeedController m_speedController = new SprintSpeedController();
 
   // Trajectory Generation for auto
   private final SendableChooser<Command> m_chooser = new SendableChooser<>();
-  private String trajectoryJSON;
-  private Trajectory test1Trajectory;
-  private Path trajectoryPath;
-  private RamseteCommand ramseteCommand;
   public DecimalFormat decimalScale = new DecimalFormat("#,###.##");
 
   // camera instantiation
@@ -96,11 +80,55 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+
+
+    configureBindings();
+
+    // m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
+    // SmartDashboard.putData(m_chooser);
+  }
+
+  /* 
+   *     SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
+        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
+        m_cannonMotorSubsystem)
+        .alongWith(
+            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
+        .andThen(
+            new WaitCommand(0.5))
+        .andThen(
+            new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
+                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
+    ParallelRaceGroup spinIntake = (new InstantCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
+
+        .alongWith(
+            new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)))
+        .until(m_beamBreakSubsystem::isBeamBroken);
+
+    SequentialCommandGroup stopIntake = new InstantCommand(m_intakeMotorSubsystem::stopMotor)
+        .andThen(
+            new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem));
+   */
+
+  /**
+   * Use this method to define your trigger->command mappings. Triggers can be
+   * created via the
+   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
+   * an arbitrary
+   * predicate, or via the named factories in {@link
+   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
+   * {@link
+   * CommandXboxController
+   * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
+   * PS4} controllers or
+   * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
+   * joysticks}.
+   */
+  private void configureBindings() {
     m_driveSubsystem.setDefaultCommand(new ArcadeDriveCmd(m_driveSubsystem,
         () -> m_speedController.getSlowMultiplier() * m_driverController.getLeftY(),
         () -> m_speedController.getSlowMultiplier() * m_driverController.getLeftX()));
 
-    TrajectoryConfig revConfig = new TrajectoryConfig(2, 3).setReversed(true);
     // Configure the trigger bindings
 
     m_driverController.b().whileTrue(
@@ -118,7 +146,7 @@ public class RobotContainer {
     m_driverController.rightBumper().whileTrue(
         new CameraIntakeCmd(m_driveSubsystem, noteCamera, m_controlReversal).alongWith(
             new StartEndCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem::stopMotor))
-            .unless(m_beamBreakSubsystem::isBeamBroken));
+            .unless(m_indexerSubsystem::isBeamBroken));
     m_driverController.leftTrigger().whileTrue(
         // new RunCommand(()* -> m_intakeMotorSubsystem.spinMotor(),
         // m_intakeMotorSubsystem)
@@ -132,7 +160,7 @@ public class RobotContainer {
             m_intakeMotorSubsystem)
             .alongWith(
                 new StartEndCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem::stopMotor, m_indexerSubsystem))
-            .until(m_beamBreakSubsystem::isBeamBroken));
+            .until(m_indexerSubsystem::isBeamBroken));
 
     // m_driverController.a().onTrue(
     // new RunCommand(
@@ -159,29 +187,6 @@ public class RobotContainer {
     // m_driverController.x().whileTrue(
     // new SequentialCommandGroup(new CameraIntakeCmd(m_driveSubsystem, noteCamera,
     // m_controlReversal)));
-
-    configureBindings();
-
-    // m_chooser.setDefaultOption("Left Amp", PathCommand("LeftAmp"));
-    // SmartDashboard.putData(m_chooser);
-  }
-
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be
-   * created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
-   * an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
-   * {@link
-   * CommandXboxController
-   * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or
-   * {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
-
   }
 
   /**
@@ -195,122 +200,8 @@ public class RobotContainer {
     return m_chooser.getSelected();
   }
 
-  public Command DriveTheAutoPathCommand(AutoPath path) {
-    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
-    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem)
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(
-            new WaitCommand(0.5))
-        .andThen(
-            new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
-
-    ParallelRaceGroup spinIntake = (new InstantCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
-
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)))
-        .until(m_beamBreakSubsystem::isBeamBroken);
-
-    SequentialCommandGroup stopIntake = new InstantCommand(m_intakeMotorSubsystem::stopMotor)
-        .andThen(
-            new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem));
-
-    SequentialCommandGroup shootIntoSpeakerAgain = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem).alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(new WaitCommand(0.5))
-        .andThen((new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-            .alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
-
-    return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1])
-        .andThen(shootIntoSpeakerAgain).andThen(paths[2]);
-  }
-
-  // Uses only 2 parameters of Path
-  public Command DoubleAutoPathCommand(AutoPath path) {
-    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
-    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem)
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(
-            new WaitCommand(0.5))
-        .andThen(
-            new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
-    ParallelRaceGroup spinIntake = (new InstantCommand(m_intakeMotorSubsystem::spinMotor, m_intakeMotorSubsystem)
-
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotor, m_indexerSubsystem)))
-        .until(m_beamBreakSubsystem::isBeamBroken);
-
-    SequentialCommandGroup stopIntake = new InstantCommand(m_intakeMotorSubsystem::stopMotor)
-        .andThen(
-            new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem));
-
-    SequentialCommandGroup shootIntoSpeakerAgain = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem).alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(new WaitCommand(0.5))
-        .andThen((new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-            .alongWith(new RunCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem))));
-
-    return shootIntoSpeaker.andThen(spinIntake).andThen(paths[0]).andThen(stopIntake).andThen(paths[1])
-        .andThen(shootIntoSpeakerAgain);
-  }
-
-  public Command SingleAutoPathCommand(AutoPath path) {
-    RamseteCommand[] paths = GenerateRamseteFactory.getAutoTrajectories(path);
-    // Trajectory trajectory = TrajectoryUtil.fromPathweaverJson(paths)
-    SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem)
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(
-            new WaitCommand(0.5))
-        .andThen(
-            new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
-    return shootIntoSpeaker.andThen((paths[0]));
-  }
-
-  public Command onlyShootCommand() {
-    SequentialCommandGroup shootIntoSpeaker = (new InstantCommand(
-        () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
-        m_cannonMotorSubsystem)
-        .alongWith(
-            new InstantCommand(m_indexerSubsystem::spinMotorFast, m_indexerSubsystem)))
-        .andThen(
-            new WaitCommand(0.5))
-        .andThen(
-            new InstantCommand(m_cannonMotorSubsystem::stopCannon, m_cannonMotorSubsystem)
-                .alongWith(new InstantCommand(m_indexerSubsystem::stopMotor, m_indexerSubsystem)));
-    return shootIntoSpeaker;
-  }
-
   public Command autoChooser() {
-    // Shoots into Speaker Twice and leaves the community
-    m_chooser.setDefaultOption("Blue Left Auto Path 2", DriveTheAutoPathCommand(new BlueTopAutoPath()));
-    m_chooser.addOption("Blue Mid Auto Path 2", DriveTheAutoPathCommand(new BlueMidAutoPath()));
-    m_chooser.addOption("Red Right Auto Path 2", DriveTheAutoPathCommand(new RedRightAutoPath()));
-    m_chooser.addOption("Red Mid Auto Path 2", DriveTheAutoPathCommand(new RedMidAutoPath()));
-    // Shoots in the speaker once and leaves the community
-    m_chooser.addOption("Red Right Auto Path 1", SingleAutoPathCommand(new RightRedLeave()));
-    m_chooser.addOption("Blue Left Auto Path 1", SingleAutoPathCommand(new LeftBlueLeave()));
-    // Shoots in the Speaker twice and DOESN'T leave the community
-    m_chooser.addOption("Red Mid Auto No Leave 2", DoubleAutoPathCommand(new RightRedLeave()));
-    m_chooser.addOption("Blue Mid Auto No Leave 2", DoubleAutoPathCommand(new LeftBlueLeave()));
-    // Only Shoots
-    m_chooser.addOption("Only Shoot", onlyShootCommand());
+    
     m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
     // Doesn't do anything
     m_chooser.addOption("No Auto", null);
@@ -319,47 +210,14 @@ public class RobotContainer {
     return m_chooser.getSelected();
   }
 
-  public Command PathCommand(String trajectoryName, String givenName) {
-    trajectoryJSON = "PathWeaver/output/" + givenName + ".wpilib.json"; // "paths/"+ trajectoryName + ".wpilib.json"
-    try {
-      trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
-      test1Trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
-    } catch (IOException ex) {
-      DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
-    }
-
-    ramseteCommand = new RamseteCommand(
-        test1Trajectory,
-        Robot.m_drivetrain::getPose,
-        new RamseteController(Constants.PathWeaverConstants.kRamseteB, Constants.PathWeaverConstants.kRamseteZeta),
-        new SimpleMotorFeedforward(Constants.PathWeaverConstants.ksVolts,
-            Constants.PathWeaverConstants.kvVoltSecondsPerMeter,
-            Constants.PathWeaverConstants.kaVoltSecondsSquaredPerMeter),
-        Constants.PathWeaverConstants.kDriveKinematics,
-        Robot.m_drivetrain::getWheelSpeeds,
-        new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
-        new PIDController(Constants.PathWeaverConstants.kPDriveVel, 0, 0),
-        Robot.m_drivetrain::driveByVolts,
-        Robot.m_drivetrain);
-
-    System.out.println("Initial Pose" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", "
-        + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
-    SmartDashboard.putString("Initial Pose", "(" + decimalScale.format(test1Trajectory.getInitialPose().getX()) + ", "
-        + decimalScale.format(test1Trajectory.getInitialPose().getY()) + ")");
-    SmartDashboard.putString("Pose", test1Trajectory.getInitialPose().toString());
-    System.out.println(test1Trajectory.getInitialPose().toString());
-
-    // Reset robot odometry to initial position of path
-    Command resetCommand = new InstantCommand(() -> Robot.m_drivetrain.resetOdometry(test1Trajectory.getInitialPose()));
-    // Create CommandGroup of the resetCommand and our ramseteCommand
-    Command returnGroup = new SequentialCommandGroup(resetCommand,
-        ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
-    return returnGroup;
-  }
 
   public Command DriveTimeCommand(double time, double speed) {
     return new RunCommand(() -> m_driveSubsystem.driveByVolts(speed, speed), m_driveSubsystem)
         .withTimeout(time);
+  }
+
+  public void resetEncoders() {
+    m_driveSubsystem.resetEncoders();
   }
 
 }

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.helpers;
+package frc.robot.helpers;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 

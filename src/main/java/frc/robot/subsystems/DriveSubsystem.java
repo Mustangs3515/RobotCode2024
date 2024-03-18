@@ -8,19 +8,23 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.encoderValues;
-import frc.robot.subsystems.helpers.ControlReversalStore;
+import frc.robot.helpers.ControlReversalStore;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelPositions;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 //import edu.wpi.first.wpilibj.interfaces.Gyro;
 import com.kauailabs.navx.frc.AHRS;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //values are in METERS not FEET
@@ -67,7 +71,35 @@ public class DriveSubsystem extends SubsystemBase {
     m_leftBackMotor.follow(m_leftFrontMotor);
     m_rightBackMotor.follow(m_rightFrontMotor);
 
+    /* AutoBuilder.configureRamsete(
+            this::getPose, // Robot pose supplier
+            this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
+            this::getCurrentSpeeds, // Current ChassisSpeeds supplier
+            this::drive, // Method that will drive the robot given ChassisSpeeds
+            new ReplanningConfig(), // Default path replanning config. See the API for the options here
+            () -> {
+              // Boolean supplier that controls when the path will be mirrored for the red alliance
+              // This will flip the path being followed to the red side of the field.
+              // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
+
+              var alliance = DriverStation.getAlliance();
+              if (alliance.isPresent()) {
+                return alliance.get() == DriverStation.Alliance.Red;
+              }
+              return false;
+            },
+            this // Reference to this subsystem to set requirements
+    ); */
+  
   }
+
+  /* public ChassisSpeeds getCurrentSpeeds() {
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+            m_leftFrontMotor.getSelectedSensorVelocity() * DriveConstants.kEncoderDistancePerPulse,
+            m_rightFrontMotor.getSelectedSensorVelocity() * DriveConstants.kEncoderDistancePerPulse,
+            navX.getRate()
+    );
+  } */
 
 
   public void setMotors(double moveSpeed, double turnSpeed)

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.helpers;
+package frc.robot.helpers;
 
 public class SprintSpeedController {
     // this class is used for multispeed in the drive
