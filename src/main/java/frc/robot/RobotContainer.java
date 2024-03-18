@@ -311,6 +311,7 @@ public class RobotContainer {
     m_chooser.addOption("Blue Mid Auto No Leave 2", DoubleAutoPathCommand(new LeftBlueLeave()));
     // Only Shoots
     m_chooser.addOption("Only Shoot", onlyShootCommand());
+    m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
     // Doesn't do anything
     m_chooser.addOption("No Auto", null);
     Shuffleboard.getTab("Auto")
@@ -354,6 +355,11 @@ public class RobotContainer {
     Command returnGroup = new SequentialCommandGroup(resetCommand,
         ramseteCommand.andThen(() -> Robot.m_drivetrain.driveByVolts(0, 0)));
     return returnGroup;
+  }
+
+  public Command DriveTimeCommand(double time, double speed) {
+    return new RunCommand(() -> m_driveSubsystem.driveByVolts(speed, speed), m_driveSubsystem)
+        .withTimeout(time);
   }
 
 }
