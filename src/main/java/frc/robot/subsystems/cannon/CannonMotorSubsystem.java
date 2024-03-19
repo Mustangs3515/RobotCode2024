@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 
-public class CannonMotorSubsystem extends PIDSubsystem{
+public class CannonMotorSubsystem extends PIDSubsystem {
     private final CANSparkMax m_rightMotor = new CANSparkMax(Constants.cannonConstants.RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
     private final CANSparkMax m_leftMotor = new CANSparkMax(Constants.cannonConstants.LEFT_MOTOR_CAN_ID, MotorType.kBrushless);
 
