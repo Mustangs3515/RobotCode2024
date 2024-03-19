@@ -66,13 +66,6 @@ public class RobotContainer {
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
     public RobotContainer() {
-        m_chooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
-        m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
-        // Doesn't do anything
-        m_chooser.addOption("No Auto", null);
-        Shuffleboard.getTab("Auto")
-                .add("chooser", m_chooser);
-
         NamedCommands.registerCommand("Shoot", (new InstantCommand(
                 () -> m_cannonMotorSubsystem.setCannonPower(Constants.cannonConstants.SPEAKER_FIRING_POWER),
                 m_cannonMotorSubsystem)
@@ -91,6 +84,13 @@ public class RobotContainer {
                         .until(m_indexerSubsystem::isBeamBroken));
 
         NamedCommands.registerCommand("Stop", new InstantCommand(m_intakeMotorSubsystem::stopMotor));
+
+        m_chooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
+        m_chooser.addOption("Drive Time", DriveTimeCommand(5, 0.5));
+        // Doesn't do anything
+        m_chooser.addOption("No Auto", null);
+        Shuffleboard.getTab("Auto")
+                .add("chooser", m_chooser);
 
         configureBindings();
 
